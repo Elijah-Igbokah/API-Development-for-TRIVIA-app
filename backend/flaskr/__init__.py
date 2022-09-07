@@ -125,23 +125,17 @@ def create_app(test_config=None):
         try:
             question = Question.query.filter(
                 question_id == Question.id).one_or_none()
-            if question == None:
+            if question is None:
                 abort(404)
-            else:
-                question.delete()
-                # questions = Question.query.all()
-                # formatted_question = [question.format()
-                #                       for question in questions]
-                return jsonify({
-                    'success': True,
-                    'deleted': question.id,
-                    # 'questions': formatted_question,
-                    # 'total_questions': len(formatted_question)
-                })
+
+            question.delete()
+
+            return jsonify({
+                'success': True,
+                'deleted': question.id,
+
+            })
         except:
-            # db.session.rollback()
-            # flash('An error occurred. Venue ' +
-            #       question.id + ' could not be deleted.')
             abort(422)
 
     """
@@ -157,11 +151,16 @@ def create_app(test_config=None):
     """
     @app.route('/questions', methods=['POST'])
     def create_question():
+
         body = request.get_json()
         new_question = body.get('question', None)
         new_answer = body.get('answer', None)
         new_difficulty = body.get('difficulty', None)
         new_category = body.get('category', None)
+
+        if not ('question' in body and 'answer' in body and
+                'difficulty' in body and 'category' in body):
+            abort(422)
 
         try:
             new_entry = Question(question=new_question, answer=new_answer,
@@ -201,15 +200,7 @@ def create_app(test_config=None):
                 Question.question.ilike(f'%{searchTerm}%')).all()
 
             selection_formatted = [result.format() for result in selection]
-            # search_results = []
-            # for i in selection:
-            #     search_results.append({
-            #         'id': i.id,
-            #         'question': i.question,
-            #         'answer': i.answer,
-            #         'category': i.category,
-            #         'difficulty': i.difficulty
-            #     })
+
             if len(selection_formatted) == 0:
                 return abort(404)
 
@@ -286,6 +277,10 @@ def create_app(test_config=None):
 
             if len(questions) >= 1:
                 question = random.choice(questions)
+            else:
+                return jsonify({
+                    'success': True,
+                    'message': "game over"})
 
             return jsonify({
                 'success': True,
@@ -300,7 +295,7 @@ def create_app(test_config=None):
     including 404 and 422.
     -DONE!!!
     """
-    @app.errorhandler(404)
+    @ app.errorhandler(404)
     def not_found(error):
         return (
             jsonify({
@@ -310,7 +305,7 @@ def create_app(test_config=None):
             }), 404
         )
 
-    @app.errorhandler(422)
+    @ app.errorhandler(422)
     def unprocessed(error):
         return (
             jsonify({

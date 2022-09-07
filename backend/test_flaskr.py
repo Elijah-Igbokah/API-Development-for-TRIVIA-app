@@ -2,7 +2,7 @@ import os
 import unittest
 import json
 from flask_sqlalchemy import SQLAlchemy
-from backend.settings import DB_NAME_TEST
+# from backend.settings import DB_NAME_TEST
 
 from flaskr import create_app
 from models import setup_db, Question, Category
@@ -85,14 +85,22 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['message'], "resource not found")
 
     def test_delete_question(self):
-        res = self.client().delete('/questions/1')
-        data = json.loads(res.data)
+        """ 
+        Tests question delete success
+        """
+        # First create a new question to be deleted
+        question = Question(question="What does the fox say?",
+                            answer='Moo', category=1, difficulty=1)
+        question.insert()
+        question_id = question.id
 
-        question = Question.query.filter(Question.id == 1).one_or_none()
+        response = self.client().delete('/questions/{}'.format(question_id))
+        data = json.loads(response.data)
 
-        self.assertEqual(res.status_code, 200)
+        # check status code, success message & compare length before & after
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(data['success'], True)
-        self.assertEqual(data['deleted'], 1)
+        self.assertEqual(data['deleted'], question_id)
 
     def test_422_delete_request_not_processed(self):
         res = self.client().delete('/questions/3000')
@@ -112,8 +120,8 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['answer'])
         self.assertTrue(data['difficulty'])
 
-    def test_405_if_book_creation_not_allowed(self):
-        res = self.client().post('/questions/55', json=self.new_question)
+    def test_422_if_question_creation_not_valid(self):
+        res = self.client().post('/questions', json={})
         data = json.loads(res.data)
 
         self.assertEqual(res.status_code, 422)
